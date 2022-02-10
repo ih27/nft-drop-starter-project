@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
 import twitterLogo from './assets/twitter-logo.svg';
 
@@ -7,26 +7,21 @@ const TWITTER_HANDLE = 'issmokk';
 const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 
 const App = () => {
-  // Actions
+  // State
+  const [ walletAddress, setWalletAddress ] = useState(null);
 
-  /**
-   * Checks if wallet is connected
-   */
+  // Actions
   const checkIfWalletIsConnected = async () => {
     try {
       const { solana } = window;
 
-      if (solana && solana.isPhantom) {
-        console.log('Phantom wallet found!');
-
-        /*
-         * connect directly with the user's wallet!
-         */
-        const response = await solana.connect({ onlyIfTrusted: true });
-        console.log(
-          'Connected with Public Key:',
-          response.publicKey.toString()
-        );
+      if (solana) {
+        if (solana.isPhantom) {
+          console.log('Phantom wallet found!');
+          const response = await solana.connect({ onlyIfTrusted: true });
+          console.log('Connected with Public Key:', response.publicKey.toString());
+          setWalletAddress(response.publicKey.toString());
+        }
       } else {
         alert('Solana object not found! Get a Phantom Wallet 👻');
       }
@@ -35,10 +30,15 @@ const App = () => {
     }
   };
 
-  /*
-   * empty definition not to break the code
-   */
-  const connectWallet = async () => {};
+  const connectWallet = async () => {
+    const { solana } = window;
+
+    if (solana) {
+      const response = await solana.connect();
+      console.log('Connected with Public Key:', response.publicKey.toString());
+      setWalletAddress(response.publicKey.toString());
+    }
+  };
 
   /*
    * when the user hasn't connected their wallet to the app yet.
@@ -72,16 +72,16 @@ const App = () => {
         <div className="header-container">
           <p className="header">🍭 Candy Drop 🍭</p>
           <p className="sub-text">NFT drop machine with fair mint</p>
-          {renderNotConnectedContainer()}
+          { !walletAddress && renderNotConnectedContainer() }
         </div>
         <div className="footer-container">
-          <img alt="Twitter Logo" className="twitter-logo" src={twitterLogo} />
+          <img alt="Twitter Logo" className="twitter-logo" src={ twitterLogo } />
           <a
             className="footer-text"
             href={TWITTER_LINK}
             target="_blank"
             rel="noreferrer"
-          >{`by @${TWITTER_HANDLE}`}</a>
+          >{ `by @${TWITTER_HANDLE}` }</a>
         </div>
       </div>
     </div>
