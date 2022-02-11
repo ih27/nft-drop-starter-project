@@ -1,0 +1,25 @@
+{
+    "name": "Brian_Party_Animal",
+    "symbol": "BRN",
+    "description": "Collection of 3 Brian models on the blockchain. This is the number 2/3.",
+    "seller_fee_basis_points": 500,
+    "image": "1.png",
+    "properties": {
+        "files": [
+        {
+            "uri": "1.png",
+            "type": "image/png"
+        }
+        ],
+        "creators": [
+        {
+            "address": "4kKCe1qQieuoz3b43nqNq8xMQVkqZAukAbgsYhHezACm",
+            "share": 100
+        }
+        ]
+    },
+    "collection": {
+        "name": "Brian Origin",
+        "family": "brian"
+    }
+}
