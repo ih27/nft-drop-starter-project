@@ -26,3 +26,6 @@ yarn-error.log*
 
 node_modules
 .env
+.cache/.cache
+.cache/devnet-temp.json
+app/src/CandyMachine/.cache
