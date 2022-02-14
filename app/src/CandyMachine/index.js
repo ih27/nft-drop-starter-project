@@ -1,4 +1,4 @@
-import React, { useEffect, useState }  from 'react';
+import React, { useEffect, useState, useCallback }  from 'react';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { Program, Provider, web3 } from '@project-serum/anchor';
 import { MintLayout, TOKEN_PROGRAM_ID, Token } from '@solana/spl-token';
@@ -14,7 +14,7 @@ import {
   getNetworkToken,
   CIVIC
 } from './helpers';
-import nftData from './.cache/devnet-temp.json';
+import { Metadata } from '@metaplex-foundation/mpl-token-metadata';
 
 const { SystemProgram } = web3;
 const opts = {
@@ -23,8 +23,7 @@ const opts = {
 
 const CandyMachine = ({ walletAddress }) => {
   const [candyMachine, setCandyMachine] = useState(null);
-  const [mints, setMints] = useState([]);
-  //const [isMinting, setIsMinting] = useState(false);
+  const [mints, setMints] = useState({});
   const [isLoadingMints, setIsLoadingMints] = useState(false);
 
   const getCandyMachineCreator = async (candyMachine) => {
@@ -303,11 +302,6 @@ const CandyMachine = ({ walletAddress }) => {
     return [];
   };
 
-  useEffect(() => {
-    getCandyMachineState();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);	
-
   const getProvider = () => {
     const rpcHost = process.env.REACT_APP_SOLANA_RPC_HOST;
     // Create a new connection object
@@ -386,26 +380,6 @@ const CandyMachine = ({ walletAddress }) => {
       },
     });
 
-    var mintedItems = []; 
-
-    // for(var i = 0; i < itemsRedeemed; i++){
-    //   mintedItems.push(nftData.items[i]);
-    // }
-
-    const genImageURL = async (url) => {
-      const response = await fetch(url);
-      const data = await response.json();
-      return ({ imageLink: data.image, name: data.name });
-    };
-    
-    for (let i = 0; i < itemsRedeemed; i++) {
-      const nftLink = nftData.items[i].link;
-      const nftObj = await genImageURL(nftLink)
-      mintedItems.push(nftObj);
-    }
-    
-    setMints(mintedItems);
-
     console.log({
       itemsAvailable,
       itemsRedeemed,
@@ -413,17 +387,58 @@ const CandyMachine = ({ walletAddress }) => {
       goLiveData,
       goLiveDateTimeString,
       presale,
-      mintedItems
     });
   };
 
+  useEffect(() => {
+    getCandyMachineState();
+  }, []);
+
+  const getMintedNfts = useCallback(async () => {
+    setIsLoadingMints(true);
+    let imgUrls = [];
+    let imgNames = [];
+
+    if (candyMachine == null) return;
+
+    const candyMachinePubKey = await getCandyMachineCreator(candyMachine.id);
+    const findMany = await Metadata.findMany(
+      candyMachine.program.provider.connection,
+      {
+        creators: [candyMachinePubKey[0].toString()],
+      }
+    );
+    
+    // fetch names and urls into two arrays
+    for (const nft of findMany) {
+      const imgName = nft.data.data.name;
+      imgNames.push(imgName);
+
+      const metaDataUri = nft.data.data.uri;
+      let response = await fetch(metaDataUri);
+      let imgUrl = await response.json();
+      imgUrls.push(imgUrl.image);
+    }
+
+    // map two arrays into one array
+    var result = {};
+    imgNames.forEach((key, i) => result[key] = imgUrls[i]);
+
+    setMints(result);
+    setIsLoadingMints(false);
+  }, [candyMachine]);
+
+  useEffect(() => {
+    getMintedNfts();
+  }, [getMintedNfts]);
+  
 const renderMintedItems = () => {
   return (
     <div className='gif-grid'> {
       (
-        mints.map(item => {
-            return <div className="gif-item" key={item.name}>
-              <img src={item.imageLink} alt={item.name} ></img>
+        mints.map( (name,url) => {
+            return <div className="gif-item" key={name} >
+              <img src={url} alt={name}></img>
             </div>
           })
       )}
